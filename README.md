@@ -1,190 +1,203 @@
-# LogAnalyzer - Analyse de Logs Distribuée
+# Mini-CRM CLI
 
-## Description
+Un gestionnaire de contacts simple et efficace en ligne de commande, écrit en Go. Ce projet illustre les bonnes pratiques de développement Go, incluant :
 
-LogAnalyzer est un outil CLI développé en Go pour analyser des fichiers de logs en parallèle. Il permet de centraliser l'analyse de multiples logs et d'en extraire des informations clés, tout en gérant les erreurs de manière robuste.
+- Une architecture en packages découplés
+- L'injection de dépendances via les interfaces
+- La création d'une CLI professionnelle avec Cobra
+- La gestion de configuration externe avec Viper
+- Plusieurs couches de persistance avec GORM et SQLite
 
 ## Fonctionnalités
 
-- **Analyse concurrentielle** : Traitement en parallèle de plusieurs logs via des goroutines
-- **Gestion d'erreurs robuste** : Erreurs personnalisées avec `errors.Is()` et `errors.As()`
-- **Interface CLI moderne** : Utilisation de Cobra pour une interface en ligne de commande intuitive
-- **Export JSON** : Génération de rapports au format JSON avec horodatage automatique
-- **Architecture modulaire** : Code organisé en packages logiques
+- **Gestion complète des contacts (CRUD)** : Ajouter, Lister, Mettre à jour et Supprimer des contacts
+- **Interface en ligne de commande** : Commandes et sous-commandes claires et standardisées
+- **Configuration externe** : Le comportement de l'application peut être modifié sans recompiler
+- **Persistance des données** : Support de multiples backends de stockage :
+  - **GORM/SQLite** : Une base de données SQL robuste contenue dans un simple fichier
+  - **Fichier JSON** : Une sauvegarde simple et lisible
+  - **En mémoire** : Un stockage éphémère pour les tests
 
 ## Installation
 
+1. Clonez le repository :
 ```bash
-# Cloner le repository
 git clone <repository-url>
-cd loganalyzer
+cd TP-CLI
+```
 
-# Installer les dépendances
+2. Installez les dépendances :
+```bash
 go mod tidy
-
-# Compiler le programme
-go build -o loganalyzer
 ```
 
-## Utilisation
-
-### Commande principale
-
+3. Compilez l'application :
 ```bash
-./loganalyzer --help
+go build -o minicrm
 ```
-
-### Commande d'analyse
-
-```bash
-# Analyse basique
-./loganalyzer analyze -c config.json
-
-# Analyse avec export JSON
-./loganalyzer analyze -c config.json -o rapport.json
-```
-
-### Options disponibles
-
-- `-c, --config` : Fichier de configuration JSON (requis)
-- `-o, --output` : Fichier de sortie JSON (optionnel)
 
 ## Configuration
 
-Le fichier de configuration JSON doit suivre ce format :
+Le fichier `config.yaml` permet de configurer le type de stockage :
 
-```json
-[
-  {
-    "id": "web-server-1",
-    "path": "/var/log/nginx/access.log",
-    "type": "nginx-access"
-  },
-  {
-    "id": "app-backend-2",
-    "path": "/var/log/my_app/errors.log",
-    "type": "custom-app"
-  }
-]
+```yaml
+storage:
+  type: "gorm"        # Options: "gorm", "json", "memory"
+  database: "contacts.db"
+  json_file: "contacts.json"
 ```
 
-### Champs de configuration
+### Types de stockage
 
-- `id` : Identifiant unique pour le log
-- `path` : Chemin vers le fichier de log (absolu ou relatif)
-- `type` : Type de log (informations uniquement)
+- **`gorm`** : Utilise SQLite avec GORM pour une persistance robuste
+- **`json`** : Sauvegarde les données dans un fichier JSON lisible
+- **`memory`** : Stockage temporaire en mémoire (données perdues à la fermeture)
 
-## Format de sortie
+## Utilisation
 
-### Affichage console
+### Commandes disponibles
 
+```bash
+# Afficher l'aide
+./minicrm --help
+
+# Ajouter un nouveau contact
+./minicrm add --name "Jean Dupont" --email "jean@example.com" --phone "0123456789" --company "Acme Corp"
+
+# Lister tous les contacts
+./minicrm list
+
+# Mettre à jour un contact
+./minicrm update 1 --phone "0987654321"
+
+# Supprimer un contact
+./minicrm delete 1
 ```
-=== web-server-1 ===
-Chemin: /var/log/nginx/access.log
-Statut: OK
-Message: Analyse terminée avec succès.
 
-=== invalid-path ===
-Chemin: /non/existent/log.log
-Statut: FAILED
-Message: Fichier introuvable.
-Erreur: stat /non/existent/log.log: no such file or directory
-```
+### Options des commandes
 
-### Export JSON
+#### Commande `add`
+- `--name, -n` : Nom du contact (obligatoire)
+- `--email, -e` : Email du contact (obligatoire)
+- `--phone, -p` : Téléphone du contact
+- `--company, -c` : Entreprise du contact
 
-```json
-[
-  {
-    "log_id": "web-server-1",
-    "file_path": "/var/log/nginx/access.log",
-    "status": "OK",
-    "message": "Analyse terminée avec succès.",
-    "error_details": ""
-  },
-  {
-    "log_id": "invalid-path",
-    "file_path": "/non/existent/log.log",
-    "status": "FAILED",
-    "message": "Fichier introuvable.",
-    "error_details": "stat /non/existent/log.log: no such file or directory"
-  }
-]
-```
+#### Commande `update`
+- `--name, -n` : Nouveau nom
+- `--email, -e` : Nouvel email
+- `--phone, -p` : Nouveau téléphone
+- `--company, -c` : Nouvelle entreprise
 
 ## Architecture
 
+Le projet suit une architecture modulaire avec séparation des responsabilités :
+
 ```
-loganalyzer/
-├── cmd/                    # Commandes CLI
+├── cmd/                    # Commandes CLI avec Cobra
+│   ├── add.go             # Commande d'ajout
+│   ├── delete.go          # Commande de suppression
+│   ├── list.go            # Commande de liste
 │   ├── root.go            # Commande racine
-│   └── analyze.go         # Commande d'analyse
-├── internal/              # Packages internes
-│   ├── config/            # Gestion des configurations
-│   ├── analyzer/          # Logique d'analyse
-│   └── reporter/          # Export des résultats
+│   └── update.go          # Commande de mise à jour
+├── internal/
+│   ├── config/            # Gestion de la configuration
+│   │   └── config.go      # Chargement config avec Viper
+│   ├── models/            # Modèles de données
+│   │   └── contact.go      # Structure Contact avec GORM
+│   └── stores/            # Couche de persistance
+│       ├── gorm_store.go  # Implémentation GORM/SQLite
+│       ├── json_store.go  # Implémentation JSON
+│       ├── memory_store.go # Implémentation mémoire
+│       └── storer.go      # Interface Storer
+├── config.yaml            # Configuration de l'application
 ├── main.go                # Point d'entrée
-└── go.mod                 # Dépendances
+└── go.mod                  # Dépendances Go
 ```
 
-### Packages
+### Interfaces et injection de dépendances
 
-- **config** : Lecture et parsing des fichiers de configuration JSON
-- **analyzer** : Logique d'analyse des logs avec gestion d'erreurs personnalisées
-- **reporter** : Export des résultats en JSON avec horodatage automatique
+Le projet utilise l'interface `Storer` pour découpler la logique métier de la persistance :
 
-## Gestion des erreurs
+```go
+type Storer interface {
+    Create(contact *models.Contact) error
+    GetByID(id uint) (*models.Contact, error)
+    GetAll() ([]models.Contact, error)
+    Update(contact *models.Contact) error
+    Delete(id uint) error
+    GetByEmail(email string) (*models.Contact, error)
+}
+```
 
-Le programme implémente deux types d'erreurs personnalisées :
+Cette approche permet de :
+- Changer facilement de backend de stockage
+- Tester la logique métier avec des mocks
+- Maintenir un code propre et modulaire
 
-1. **FileNotFoundError** : Fichier introuvable ou inaccessible
-2. **ParsingError** : Erreur lors du parsing des données
+## Dépendances
 
-Ces erreurs sont gérées proprement avec `errors.Is()` et `errors.As()`.
-
-## Fonctionnalités bonus
-
-- **Horodatage automatique** : Les fichiers d'export incluent la date (format AAMMJJ)
-- **Création automatique de dossiers** : Les répertoires d'export sont créés automatiquement
-- **Traitement concurrentiel** : Utilisation de goroutines et channels pour la performance
+- **Cobra** : Framework CLI professionnel
+- **Viper** : Gestion de configuration
+- **GORM** : ORM pour Go avec support SQLite
+- **SQLite** : Base de données embarquée
 
 ## Exemples d'utilisation
 
-### Analyse simple
+### Basculer entre les types de stockage
 
-```bash
-./loganalyzer analyze -c config.json
+1. **Utiliser SQLite** :
+```yaml
+storage:
+  type: "gorm"
+  database: "contacts.db"
 ```
 
-### Analyse avec export
-
-```bash
-./loganalyzer analyze -c config.json -o rapports/analyse_2024.json
+2. **Utiliser JSON** :
+```yaml
+storage:
+  type: "json"
+  json_file: "contacts.json"
 ```
 
-Le fichier sera automatiquement nommé `250928_analyse_2024.json` (avec la date du jour).
+3. **Utiliser la mémoire** :
+```yaml
+storage:
+  type: "memory"
+```
+
+### Workflow typique
+
+```bash
+# Ajouter quelques contacts
+./minicrm add --name "Alice" --email "alice@example.com" --company "Tech Corp"
+./minicrm add --name "Bob" --email "bob@example.com" --phone "0123456789"
+
+# Lister les contacts
+./minicrm list
+
+# Mettre à jour un contact
+./minicrm update 1 --phone "0987654321"
+
+# Supprimer un contact
+./minicrm delete 2
+```
 
 ## Développement
 
-### Prérequis
+### Ajouter un nouveau type de stockage
 
-- Go 1.24.3 ou supérieur
-- Cobra CLI framework
+1. Implémenter l'interface `Storer` dans `internal/stores/`
+2. Ajouter le cas dans `config.NewStore()`
+3. Mettre à jour la documentation
 
-### Structure du code
+### Tests
 
-Le code suit les bonnes pratiques Go avec :
-- Packages bien organisés
-- Gestion d'erreurs robuste
-- Interface CLI intuitive
-- Tests et documentation
-
-## Équipe de développement
-
-- **Développeur principal** : Étudiant M2
-- **Framework** : Go avec Cobra CLI
-- **Architecture** : Modulaire avec packages internes
+```bash
+# Compiler et tester
+go build -o minicrm
+./minicrm --help
+```
 
 ## Licence
 
-Projet académique - TP M2
+Ce projet est développé dans le cadre d'un TP d'architecture logicielle en Go.
