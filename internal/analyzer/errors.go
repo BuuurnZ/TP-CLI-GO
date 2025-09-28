@@ -3,9 +3,9 @@ package analyzer
 import "errors"
 
 var (
-	ErrFileNotFound = errors.New("fichier introuvable")
+	ErrFileNotFound    = errors.New("fichier introuvable")
 	ErrFileNotReadable = errors.New("fichier non accessible")
-	ErrParsingFailed = errors.New("erreur de parsing")
+	ErrParsingFailed   = errors.New("erreur de parsing")
 )
 
 type FileNotFoundError struct {

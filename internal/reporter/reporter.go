@@ -23,7 +23,7 @@ func ExportResults(results []analyzer.AnalysisResult, outputPath string) error {
 	baseName := filepath.Base(outputPath)
 	ext := filepath.Ext(outputPath)
 	nameWithoutExt := baseName[:len(baseName)-len(ext)]
-	
+
 	finalPath := filepath.Join(dir, dateStr+"_"+nameWithoutExt+ext)
 
 	file, err := os.Create(finalPath)

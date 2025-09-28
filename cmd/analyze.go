@@ -24,11 +24,11 @@ var analyzeCmd = &cobra.Command{
 		}
 
 		fmt.Printf("Analyse de %d logs en cours...\n", len(configs))
-		
+
 		results := analyzer.AnalyzeLogsConcurrently(configs)
-		
+
 		reporter.PrintResults(results)
-		
+
 		if outputFile != "" {
 			err = reporter.ExportResults(results, outputFile)
 			if err != nil {
