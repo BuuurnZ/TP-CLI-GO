@@ -1,0 +1,4 @@
+2024-09-25 10:30:45 INFO: Application started
+2024-09-25 10:31:12 ERROR: Invalid JSON format
+2024-09-25 10:32:01 WARN: Corrupted data detected
+2024-09-25 10:33:15 ERROR: Memory leak in module xyz
