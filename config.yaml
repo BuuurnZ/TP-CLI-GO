@@ -1,0 +1,4 @@
+storage:
+  type: "gorm"
+  database: "contacts.db"
+  json_file: "contacts.json"
